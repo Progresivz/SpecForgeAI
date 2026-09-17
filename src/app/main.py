@@ -99,6 +99,13 @@ async def request_context(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception:
+        elapsed_seconds = time.perf_counter() - started
+        metrics.observe_request(
+            request.method,
+            request.url.path,
+            500,
+            elapsed_seconds,
+        )
         logger.exception("Unhandled request error", extra={"request_id": request_id})
         return JSONResponse(
             status_code=500,

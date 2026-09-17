@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from app.database.session import SessionLocal
+from app.database import session as database_session
 from app.database.init_db import create_tables
 from app.observability.audit import audit_event
 from app.services.backup_service import run_backup, apply_retention
@@ -14,7 +14,7 @@ _scheduler = None
 
 def _maintenance_job():
     """Lightweight operational job: verify DB connectivity and record an audit heartbeat."""
-    db = SessionLocal()
+    db = database_session.SessionLocal()
     try:
         db.execute(__import__('sqlalchemy').text("SELECT 1"))
         audit_event("scheduled_health_check", status="ok", checked_at=datetime.now(timezone.utc).isoformat())
@@ -26,7 +26,7 @@ def _maintenance_job():
 
 
 def _backup_job():
-    db = SessionLocal()
+    db = database_session.SessionLocal()
     try:
         result = run_backup(db)
         apply_retention(db)

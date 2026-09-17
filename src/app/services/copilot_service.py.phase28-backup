@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+from app.services.ai_service import generate
+from app.services.project_intelligence_service import build_intelligence
+
+
+def _build_context(project) -> dict:
+    intelligence = build_intelligence(project)
+
+    return {
+        "project": intelligence.get("project", {}),
+        "health": intelligence.get("health", {}),
+        "counts": intelligence.get("counts", {}),
+        "progress": intelligence.get("progress", {}),
+        "requirements_coverage": intelligence.get("requirements_coverage", {}),
+        "maintenance": intelligence.get("maintenance", {}),
+        "schedule": intelligence.get("schedule", {}),
+        "deadlines": intelligence.get("deadlines", {}),
+        "tasks": intelligence.get("tasks", {}),
+        "git": intelligence.get("git", {}),
+        "priorities": intelligence.get("priorities", {}),
+        "recommendations": intelligence.get("recommendations", []),
+    }
+
+
+def _build_prompt(message: str, context: dict) -> str:
+    return f"""
+You are SpecForge AI Copilot, an expert software engineering assistant.
+
+You are assisting with the user's software project.
+
+PROJECT CONTEXT:
+{context}
+
+USER REQUEST:
+{message}
+
+Instructions:
+1. Use the supplied project context when answering.
+2. Do not invent project facts that are not present in the context.
+3. Give practical software-engineering recommendations.
+4. Prioritize risks, blocked work, deadlines, requirements coverage, and project health.
+5. If the request requires information that is not available, clearly say what is missing.
+6. When recommending work, explain why it should be prioritized.
+7. Structure the response clearly with headings and bullet points when useful.
+""".strip()
+
+
+def chat(db, project, message: str) -> tuple[str, dict]:
+    context = _build_context(project)
+    prompt = _build_prompt(message, context)
+
+    result = generate(
+        db=db,
+        project=project,
+        prompt=prompt,
+        system_prompt=(
+            "You are SpecForge AI Copilot. "
+            "You provide project-aware software engineering assistance."
+        ),
+    )
+
+    return result.content, context

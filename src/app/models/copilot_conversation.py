@@ -1,4 +1,5 @@
 from datetime import datetime
+from app.core.datetime_utils import utcnow
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -36,14 +37,14 @@ class CopilotConversation(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=utcnow,
     )
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utcnow,
+        onupdate=utcnow,
     )
 
     project = relationship(
@@ -100,7 +101,7 @@ class CopilotMessage(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=utcnow,
     )
 
     conversation = relationship(

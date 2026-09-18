@@ -1,6 +1,7 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from app.core.datetime_utils import utcnow
 from app.database.base import Base
 
 class EngineeringFinding(Base):
@@ -16,8 +17,8 @@ class EngineeringFinding(Base):
     status = Column(String(20), nullable=False, default='open')
     linked_task_id = Column(Integer, ForeignKey('development_tasks.id', ondelete='SET NULL'), nullable=True)
     linked_maintenance_id = Column(Integer, ForeignKey('maintenance_items.id', ondelete='SET NULL'), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
     project = relationship('Project')
     linked_task = relationship('DevelopmentTask')
     linked_maintenance = relationship('MaintenanceItem')
@@ -35,7 +36,7 @@ class GeneratedTest(Base):
     expected_result = Column(Text, nullable=False, default='')
     status = Column(String(20), nullable=False, default='proposed')
     source = Column(String(40), nullable=False, default='ai')
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
     project = relationship('Project')
     requirement = relationship('Requirement')
     task = relationship('DevelopmentTask')
@@ -50,6 +51,7 @@ class EngineeringActivity(Base):
     entity_id = Column(Integer, nullable=True)
     summary = Column(String(500), nullable=False)
     details = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
     project = relationship('Project')
     actor = relationship('User')
+

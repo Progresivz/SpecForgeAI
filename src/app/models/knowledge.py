@@ -1,6 +1,7 @@
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+from app.core.datetime_utils import utcnow
 
 from app.database.base import Base
 
@@ -16,6 +17,7 @@ class KnowledgeEntry(Base):
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")
     tags: Mapped[str] = mapped_column(String(1000), nullable=False, default="")
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     project = relationship("Project", back_populates="knowledge_entries")
+

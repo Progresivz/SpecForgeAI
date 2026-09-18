@@ -1,4 +1,5 @@
 from datetime import datetime
+from app.core.datetime_utils import utcnow
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from app.database.base import Base
@@ -20,6 +21,7 @@ class ReleaseAutomationRun(Base):
     decision = Column(String(30), nullable=False, default='no_go')
     score = Column(Integer, nullable=False, default=0)
     evidence = Column(Text, nullable=False, default='{}')
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
     project = relationship('Project')
     release = relationship('Release')
+

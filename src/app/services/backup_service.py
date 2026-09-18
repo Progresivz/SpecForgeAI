@@ -4,6 +4,7 @@ from pathlib import Path
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 from app.core.config import settings
+from app.core.datetime_utils import utcnow
 from app.models.operations import BackupRecord, OperationalJob
 
 
@@ -37,7 +38,7 @@ def verify_backup(path: Path, kind: str) -> tuple[bool, str]:
 def run_backup(db: Session | None = None) -> BackupRecord:
     started = time.perf_counter(); kind = _db_kind(); stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     ext = 'sqlite3' if kind == 'sqlite' else 'dump'; path = _backup_dir() / f'specforge_{stamp}.{ext}'
-    job = OperationalJob(job_type='backup', status='running', started_at=datetime.utcnow())
+    job = OperationalJob(job_type='backup', status='running', started_at=utcnow())
     if db: db.add(job); db.commit(); db.refresh(job)
     try:
         if kind == 'sqlite':
@@ -57,7 +58,7 @@ def run_backup(db: Session | None = None) -> BackupRecord:
         if db: db.add(record); job.status='failed'; job.message=str(exc)
     finally:
         elapsed=round((time.perf_counter()-started)*1000,2)
-        if db: job.finished_at=datetime.utcnow(); job.duration_ms=elapsed; db.commit(); db.refresh(record)
+        if db: job.finished_at=utcnow(); job.duration_ms=elapsed; db.commit(); db.refresh(record)
     return record
 
 
@@ -77,3 +78,4 @@ def apply_retention(db: Session) -> dict:
 def backup_status(db: Session):
     latest=db.query(BackupRecord).order_by(BackupRecord.created_at.desc()).first()
     return {'configured':True,'database_type':_db_kind(),'backup_dir':str(_backup_dir()),'latest':latest}
+

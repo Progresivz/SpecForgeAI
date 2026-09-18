@@ -1,4 +1,5 @@
 from datetime import datetime
+from app.core.datetime_utils import utcnow
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base
@@ -17,7 +18,8 @@ class AIArtifact(Base):
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="draft", index=True)
     target_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     target_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     project = relationship("Project", back_populates="ai_artifacts")
+

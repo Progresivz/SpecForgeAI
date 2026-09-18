@@ -32,6 +32,7 @@ def _setup_environment(tmp_path, monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.setenv("AI_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("GIT_ALLOWED_ROOTS", str(tmp_path))
 
     import app.core.config
     import app.database.session

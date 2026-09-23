@@ -18,21 +18,38 @@ def _database_status() -> str:
 
 @router.get("/health")
 def health():
-    return {"status": "online", "service": settings.APP_NAME, "version": settings.VERSION}
+    return {
+        "status": "online",
+        "service": settings.APP_NAME,
+        "version": settings.VERSION,
+    }
+
+
+@router.get("/health/live")
+def liveness():
+    return {
+        "live": True,
+        "service": settings.APP_NAME,
+    }
 
 
 @router.get("/health/ready")
 def readiness():
     db_status = _database_status()
     ai_configured = (
-        bool(settings.OPENAI_API_KEY) if settings.AI_PROVIDER.lower() == "openai"
+        bool(settings.OPENAI_API_KEY)
+        if settings.AI_PROVIDER.lower() == "openai"
         else bool(settings.LOCAL_LLM_URL)
     )
     ready = db_status == "ok"
+
     return {
         "ready": ready,
         "service": settings.APP_NAME,
         "database": db_status,
-        "ai": {"provider": settings.AI_PROVIDER, "configured": ai_configured},
+        "ai": {
+            "provider": settings.AI_PROVIDER,
+            "configured": ai_configured,
+        },
         "migration_mode": settings.MIGRATION_MODE,
-    }
+        }

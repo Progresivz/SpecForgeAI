@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
@@ -27,6 +28,7 @@ if url.get_backend_name() != "sqlite":
     )
 else:
     engine_kwargs["connect_args"] = {"check_same_thread": False}
+    engine_kwargs["poolclass"] = NullPool
 
 engine = create_engine(url, **engine_kwargs)
 

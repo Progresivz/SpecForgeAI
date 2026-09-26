@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.datetime_utils import utcnow
 from app.models.operations import BackupRecord, OperationalJob
+# Ensure all SQLAlchemy models are registered before operational jobs are instantiated.
+import app.database.init_db as _model_registry  # noqa: F401
 
 
 def _db_kind():
@@ -47,8 +49,46 @@ def run_backup(db: Session | None = None) -> BackupRecord:
             src_con = sqlite3.connect(str(src)); dst_con = sqlite3.connect(str(path))
             try: src_con.backup(dst_con)
             finally: dst_con.close(); src_con.close()
-        elif kind == 'postgresql':
-            subprocess.run(['pg_dump', '--format=custom', '--file', str(path), settings.DATABASE_URL], check=True, capture_output=True, text=True, timeout=300)
+        elif kind == "postgresql":
+            dump_url = make_url(settings.DATABASE_URL)
+
+            if dump_url.get_backend_name() != "postgresql":
+                raise RuntimeError(
+                    f"Expected PostgreSQL backend, got {dump_url.get_backend_name()!r}"
+                )
+
+            pg_env = os.environ.copy()
+            pg_env["PGPASSWORD"] = dump_url.password or ""
+
+            proc = subprocess.run(
+                [
+                    "pg_dump",
+                    "--format=custom",
+                    "--file",
+                    str(path),
+                    "--host",
+                    dump_url.host or "localhost",
+                    "--port",
+                    str(dump_url.port or 5432),
+                    "--username",
+                    dump_url.username or "",
+                    "--dbname",
+                    dump_url.database or "",
+                ],
+                env=pg_env,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+
+            if proc.returncode != 0:
+                error = (
+                    proc.stderr.strip()
+                    or proc.stdout.strip()
+                    or "pg_dump failed"
+                )
+                raise RuntimeError(f"pg_dump failed: {error}")
         else: raise RuntimeError(f'Unsupported database backend: {kind}')
         verified, message = verify_backup(path, kind)
         record = BackupRecord(job_id=job.id if job else None, database_type=kind, path=str(path), status='success' if verified else 'unverified', size_bytes=path.stat().st_size, verified=verified, message=message)
@@ -78,4 +118,5 @@ def apply_retention(db: Session) -> dict:
 def backup_status(db: Session):
     latest=db.query(BackupRecord).order_by(BackupRecord.created_at.desc()).first()
     return {'configured':True,'database_type':_db_kind(),'backup_dir':str(_backup_dir()),'latest':latest}
+
 

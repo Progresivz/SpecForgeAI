@@ -101,3 +101,12 @@ def test_access_tokens_carry_access_type_claim(monkeypatch):
     assert payload["typ"] == "access"
     assert "iat" in payload
     assert "exp" in payload
+def test_password_hash_and_verify_round_trip():
+    from app.auth.security import hash_password, verify_password
+
+    password = "StrongPass123!"
+    hashed = hash_password(password)
+
+    assert hashed
+    assert verify_password(password, hashed) is True
+    assert verify_password("WrongPass123!", hashed) is False

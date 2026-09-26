@@ -1,0 +1,94 @@
+name: SpecForge AI CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: specforge-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: src/requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r src/requirements.txt
+
+      - name: Compile application
+        run: python -m compileall -q src/app
+
+      - name: Check Git diff formatting
+        run: git diff --check
+
+      - name: Run test suite
+        run: python -m pytest src/tests -q
+
+  docker:
+    name: Docker build and configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create CI-only Compose environment
+        shell: bash
+        run: |
+          cat > src/.env <<'EOF'
+          POSTGRES_PASSWORD=CiOnlyPassword12345678901234567890
+          OPENAI_API_KEY=ci-placeholder
+          ENVIRONMENT=test
+          EOF
+
+      - name: Validate Compose configuration
+        run: docker compose -f src/docker-compose.yml config -q
+
+      - name: Build application image
+        run: docker build -t specforgeai-app:ci ./src
+
+      - name: Build nginx image
+        run: docker build -t specforgeai-nginx:ci ./src/deploy/nginx
+
+      - name: Generate temporary TLS certificate
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/specforge-certs"
+          openssl req -x509 -nodes -newkey rsa:2048 \
+            -keyout "$RUNNER_TEMP/specforge-certs/server.key" \
+            -out "$RUNNER_TEMP/specforge-certs/server.crt" \
+            -days 1 \
+            -subj "/CN=localhost" \
+            -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+
+      - name: Validate nginx configuration
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE/src/deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro" \
+            -v "$RUNNER_TEMP/specforge-certs:/etc/nginx/certs:ro" \
+            nginx:1.27-alpine \
+            nginx -t

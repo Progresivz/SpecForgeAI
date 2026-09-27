@@ -45,8 +45,8 @@ jobs:
       CORS_ORIGINS: https://localhost
       OPENAI_API_KEY: ""
       AI_PROVIDER: openai
-      GIT_ALLOWED_ROOTS: /tmp/repos
-      LOG_LEVEL: WARNING
+      GIT_ALLOWED_ROOTS: ""
+      LOG_LEVEL: INFO
       LOG_FORMAT: json
 
     steps:
@@ -126,3 +126,4 @@ jobs:
 
       - name: Run test suite
         run: python -m pytest src/tests -q
+

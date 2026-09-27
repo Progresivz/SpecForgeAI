@@ -1,8 +1,9 @@
-﻿import json
+import json
 import logging
 from datetime import datetime, timezone
 
 logger = logging.getLogger("specforge.audit")
+logger.setLevel(logging.INFO)
 
 _SENSITIVE_KEYS = {
     "password",
@@ -72,3 +73,4 @@ def audit_event(
             separators=(",", ":"),
         )
     )
+
